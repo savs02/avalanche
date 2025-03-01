@@ -12,8 +12,8 @@ class ChatManager:
         self.client = OpenAI(api_key=API_KEY)
         chat_config = self.load_chat_config()
         self.model_name = chat_config["model_name"]
-        self.token_limit = chat_config["token_limit"]
-        self.word_limit = 50  # model response size
+        self.token_limit = chat_config["token_limit"] # response token size
+        self.word_limit = chat_config["word_limit"]  # response word length
 
         self.previous_trades = {}  # e.g., {"trade": [extra metadata]}
  
@@ -32,10 +32,12 @@ class ChatManager:
         pass
 
     def generate_prompt(self):
+        system_prompt = "You are an assistant.\n"
+
         crypto_data = self.load_crypto_data()
         supplementary_data = self.parse_crypto_data(crypto_data)
         prompt = f"Here is some relevant crypto data:\n{supplementary_data}"
-        return prompt
+        return system_prompt + prompt
 
     def query_model(self, user_query):
         prompt = self.generate_prompt()
