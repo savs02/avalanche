@@ -19,7 +19,7 @@ def get_data():
     coins_ids_list = [coin['id'] for coin in market_data]
 
     for coin in market_data:
-        result[coin['id']] = {k: v for k, v in coin.items() if k != 'id'}
+        result[coin['id']] = {"market data":{k: v for k, v in coin.items() if k != 'id'}}
 
     for coin_id in coins_ids_list:
         historical_market_chart_by_id_endpoint = f"{COINGECKO_URL}/coins/{coin_id}/market_chart"
@@ -27,7 +27,7 @@ def get_data():
                 "days": HISTORY_PERIOD,
                 "interval": "daily"}
         history = requests.get(historical_market_chart_by_id_endpoint, headers=headers, params=params).json()
-        result[coin_id].update(history)
+        result[coin_id]["historical data"] = history
 
     json_result = json.dumps(result)
     return json_result
