@@ -1,8 +1,11 @@
+import os
 from openai import OpenAI
+from dotenv import load_dotenv
 
-api_key = "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"
+load_dotenv()  
+API_KEY = os.getenv("OPENAI_API_KEY")
 
-client = OpenAI(api_key=api_key)
+client = OpenAI(api_key=API_KEY)
 
 completion = client.chat.completions.create(
     model="gpt-4o-mini",
