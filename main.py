@@ -23,8 +23,7 @@ def get_weather(location: str):
 
 
 tools = [{
-    "type": "function",
-    "function": {
+        "type": "function",
         "name": "get_weather",
         "description": "Get current temperature for a given location.",
         "parameters": {
@@ -40,9 +39,11 @@ tools = [{
             ],
             "additionalProperties": False
         },
-        "strict": True
+        # "strict": True
     }
-}]
+]
+
+tools_string = json.dumps(tools, indent=4)
 
 
 SYSTEM_MESSAGE = (
@@ -173,15 +174,27 @@ async def handle_media_stream(websocket: WebSocket):
                         if response.get('item_id'):
                             last_assistant_item = response['item_id']
 
-                        # if response.get('tools'):
-                        #     for tool_call in response['tools']:
-                        #         # Example: you can process the tool call and return the result to Twilio
-                        #         if tool_call['function_call']['name'] == 'get_weather':
-                        #             location = tool_call['function_call']['parameters']['location']
-                        #             # You would implement the actual logic for the tool here
-                        #             weather_info = get_weather(location)
-                        #             # Send the result back to the user through Twilio
-                        #             await send_weather_info_to_twilio(weather_info)
+                        if response.get('tools'):
+                            for tool_call in response['tools']:
+                                # Example: you can process the tool call and return the result to Twilio
+                                if tool_call['name'] == 'get_weather':
+                                    location = tool_call['parameters']['properties']['location']
+                                    print("NIKITA", location)
+                                    # You would implement the actual logic for the tool here
+                                    weather_info = get_weather(location)
+                                    print("NIKITA", weather_info)
+
+                                    # Send the result back to the user through Twilio
+                                    # await send_weather_info_to_twilio(weather_info)
+                                    weather_audio = base64.b64encode(weather_info.encode('utf-8')).decode('utf-8')
+                                    audio_response = {
+                                        "event": "media",
+                                        "streamSid": stream_sid,
+                                        "media": {
+                                            "payload": weather_audio
+                                        }
+                                    }
+                                    await websocket.send_json(audio_response)
 
                         await send_mark(websocket, stream_sid)
 
@@ -267,6 +280,7 @@ async def initialize_session(openai_ws):
             "instructions": SYSTEM_MESSAGE,
             "modalities": ["text", "audio"],
             "temperature": 0.8,
+            "tools": tools,
         }
     }
     print('Sending session update:', json.dumps(session_update))
