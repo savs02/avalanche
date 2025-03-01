@@ -14,6 +14,37 @@ load_dotenv()
 # Configuration
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 PORT = int(os.getenv('PORT', 5050))
+
+def get_weather(location: str):
+    # Example logic to get weather information
+    # You can make an API call to a weather service, like OpenWeatherMap
+    weather = f"The current temperature in {location} is 22°C."  # Placeholder response
+    return weather
+
+
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "get_weather",
+        "description": "Get current temperature for a given location.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {
+                    "type": "string",
+                    "description": "City and country e.g. Bogotá, Colombia"
+                }
+            },
+            "required": [
+                "location"
+            ],
+            "additionalProperties": False
+        },
+        "strict": True
+    }
+}]
+
+
 SYSTEM_MESSAGE = (
     "You are a helpful and bubbly AI assistant who loves to chat about "
     "anything the user is interested in and is prepared to offer them facts. "
@@ -100,6 +131,18 @@ async def handle_media_stream(websocket: WebSocket):
                 print("Client disconnected.")
                 if openai_ws.open:
                     await openai_ws.close()
+        
+        async def send_weather_info_to_twilio(weather_info: str):
+            weather_audio = base64.b64encode(weather_info.encode('utf-8')).decode('utf-8')
+            audio_response = {
+                "event": "media",
+                "streamSid": stream_sid,
+                "media": {
+                    "payload": weather_audio
+                }
+            }
+            await websocket.send_json(audio_response)
+
 
         async def send_to_twilio():
             """Receive events from the OpenAI Realtime API, send audio back to Twilio."""
@@ -129,6 +172,16 @@ async def handle_media_stream(websocket: WebSocket):
                         # Update last_assistant_item safely
                         if response.get('item_id'):
                             last_assistant_item = response['item_id']
+
+                        # if response.get('tools'):
+                        #     for tool_call in response['tools']:
+                        #         # Example: you can process the tool call and return the result to Twilio
+                        #         if tool_call['function_call']['name'] == 'get_weather':
+                        #             location = tool_call['function_call']['parameters']['location']
+                        #             # You would implement the actual logic for the tool here
+                        #             weather_info = get_weather(location)
+                        #             # Send the result back to the user through Twilio
+                        #             await send_weather_info_to_twilio(weather_info)
 
                         await send_mark(websocket, stream_sid)
 
