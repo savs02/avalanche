@@ -1,0 +1,2 @@
+# avalanche
+Crypto Trading Assistant
