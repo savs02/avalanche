@@ -13,8 +13,15 @@ class PreviousTrades:
         self.trades = {}
         self.model = model 
         openai.api_key = openai_api_key
+    
+    def _add_trade(self, text, coin, price, time):
+        text = text.join('\n')
+        key_words = self.get_keys(text)
+        key = '@'.join(key_words)
+        self.trades[key] = Trade(coin, price, time)
 
-    def add_trade(self, text, coin, price, time):
+    def _add_trade(self, text, coin, price, time):
+        text = text.join('\n')
         key_words = self.get_keys(text)
         key = '@'.join(key_words)
         self.trades[key] = Trade(coin, price, time)

@@ -20,7 +20,12 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 PORT = int(os.getenv('PORT', 5050))
 
-
+CONTEXT_HISTORY = {
+    'bitcoin': [],
+    'ethereum': [],
+    'ripple': [],
+    'tether': []
+}
 
 ########## Define tooling
 # def get_weather(location: str):
@@ -115,7 +120,7 @@ tools = [
     #     "type": "function",
     #     "name": "make_trade",
     #     "description": (
-    #         "Make a trade for the given coin. Accepts a coin id (e.g., 'bitcoin') as a string."
+    #         "Make a trade for the given coin. Accepts a coin id (e.g., 'bitcoin') as a string. Options coins are: bitcoin, ethereum, ripple. If another coin is mentioned, say that this is not currently supported.",
     #     ),
     #     "parameters": {
     #         "type": "object",
@@ -125,13 +130,20 @@ tools = [
     #         "required": ["coin"],
     #         "additionalProperties": False
     #     }
-    # } #,
+    # },
     # {
     #     "type": "function",
     #     "name": "give_advice",
     #     "description": (
     #         "Advice the user on making a trade based on previous trades and comparison with their trends so far."
-    #     )
+    #         "Mention specfific values to back up your assessments and be detailed. Make sure to ennunciate positive and negative trend indexes e.g., '-0.18' as 'negative 0.18'. "
+    #         "Be detailed in your response."
+    #     ),
+    #     "parameters": {
+    #         "type": "object",
+    #         "properties": {},
+    #         "additionalProperties": False
+    #     }
     # },
     {
         "type": "function",
@@ -288,25 +300,25 @@ def make_trade(coin: str):
         coin_data = data_dict[coin]
         price = coin_data.get("market data", {}).get("current_price", "Price not available")
         # trades.add_trade(messages[1]["content"], coin, price, current_time)
-        trades.add_trade(messages[1]["content"], coin, price, current_time)
+        trades.add_trade(CONTEXT_HISTORY[coin], coin, price, current_time)
         return f"Trade for {coin} at {price} has been successfully made at {current_time}."
     return f"{coin} not found."
 
-# def give_advice():
-#     analysis_trends = compare_trends()
-#     prev_trades = trades.get_trade(messages[0]["content"])
-#     if "strongest upward trend" in analysis_trends and "strongest downward trend" in analysis_trends:
-#         upward_coin = analysis_trends.split("strongest upward trend")[1].split("and")[0].strip()
-#         downward_coin = analysis_trends.split("strongest downward trend")[1].strip()
-#         if prev_trades:
-#             advice = f"Based on historical trends, {upward_coin} shows a strong upward trend, while {downward_coin} is on a downward trajectory. "
-#             advice += "Since you've previously traded these, it might be wise to consider holding or selling {downward_coin}, and buying {upward_coin} if you haven't already done so."
-#         else:
-#             advice = f"Based on historical trends, {upward_coin} shows a strong upward trend, while {downward_coin} is on a downward trajectory. "
-#             advice += "Consider buying {upward_coin} to capitalize on the trend."
-#     else:
-#         advice = "Insufficient data to provide an analysis of trends or previous trades."
-#     return advice
+def give_advice():
+    analysis_trends = compare_trends()
+    prev_trades = trades.get_trade()
+    if "strongest upward trend" in analysis_trends and "strongest downward trend" in analysis_trends:
+        upward_coin = analysis_trends.split("strongest upward trend")[1].split("and")[0].strip()
+        downward_coin = analysis_trends.split("strongest downward trend")[1].strip()
+        if prev_trades:
+            advice = f"Based on historical trends, {upward_coin} shows a strong upward trend, while {downward_coin} is on a downward trajectory. "
+            advice += "Since you've previously traded these, it might be wise to consider holding or selling {downward_coin}, and buying {upward_coin} if you haven't already done so."
+        else:
+            advice = f"Based on historical trends, {upward_coin} shows a strong upward trend, while {downward_coin} is on a downward trajectory. "
+            advice += "Consider buying {upward_coin} to capitalize on the trend."
+    else:
+        advice = "Insufficient data to provide an analysis of trends or previous trades."
+    return advice
 
 
 def get_crypto_news():
@@ -324,7 +336,7 @@ available_functions = {
     "get_crypto_news": get_crypto_news,
     "get_price": get_price,
     "get_trend": get_trend,
-    # "make_trade": make_trade #,
+    # "make_trade": make_trade,
     "finish": finish
 }
 
@@ -472,10 +484,17 @@ async def handle_media_stream(websocket: WebSocket):
                                 function_name = item.get("name")
                                 function_args = json.loads(item.get("arguments"))
 
+                                print(function_name, function_args)
+
                                 function_to_call = available_functions[function_name]
                                 try:
                                     function_response = function_to_call(**function_args)
-                                    # function_response = get_weather(**function_args)
+
+                                    if function_name in ["get_price", "get_trend"]:
+                                        print("COIN NAME: ", function_args["coin"])
+                                        CONTEXT_HISTORY[function_args["coin"]].append(function_response)
+                                        print("CONTEXT_HISTORY\n", CONTEXT_HISTORY)
+
                                     print("FUNCTION CALL RESPONSE: ", function_response)
                                 except Exception as e:
                                     print(f"Error calling function {item['name']}: {e}")
@@ -490,6 +509,8 @@ async def handle_media_stream(websocket: WebSocket):
                                             "output": function_response
                                         }
                                     }))
+
+                                    print("OPENAI MODEL RESPONSE\n", function_response)
                                 except Exception as e:
                                     print(f"Error sending function output to OpenAI: {e}")
 
