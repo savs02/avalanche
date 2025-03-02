@@ -78,7 +78,7 @@ tools = [
         "function": {
             "name": "make_trade",
             "description": (
-                "Make a trade for the given coin."
+                "Make a trade for the given coin. Accepts a coin id (e.g., 'bitcoin') as a string."
             ),
             "parameters": {
                 "type": "object",
@@ -90,12 +90,22 @@ tools = [
             },
             "strict": True
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "give_advice",
+            "description": (
+                "Advice the user on making a trade based on previous trades and comparison with their trends so far."
+            ),
+        }
     }
 ]
 
 # Build the user messages.
 messages = [
-    {"role": "user", "content": f"Make a trade for {coin_name}?"},
+    {"role": "user", "content": f"Give me advice depending on what's happened so far in the markets."},
+    {"role": "user", "content": f"Make a trade for {coin_name}"},
     {"role": "user", "content": "Give me the latest summary of what's happened so far in the markets."},
     {"role": "user", "content": "Based on historical data, what trend do you see for all the coins?"},
     {"role": "user", "content": f"What's the current price for {coin_name}?"},
@@ -188,9 +198,9 @@ def compare_trends():
 def get_summary():
     """
     Compute a three-line morning digest summary:
-      1. Market prices summary (range and average).
-      2. Notable trend analysis from all coins.
-      3. A concluding digest line.
+        1. Market prices summary (range and average).
+        2. Notable trend analysis from all coins.
+        3. A concluding digest line.
     """
     data_dict = json.loads(data)
     coin_prices = []
@@ -246,11 +256,25 @@ def make_trade(coin: str):
     if coin in data_dict:
         coin_data = data_dict[coin]
         price = coin_data.get("market data", {}).get("current_price", "Price not available")
-        trades.add_trade(messages[0]["content"], coin, price, current_time)
+        trades.add_trade(messages[1]["content"], coin, price, current_time)
         return f"Trade for {coin} at {price} has been successfully made at {current_time}."
     return f"{coin} not found."
 
-# def give_advice():
+def give_advice():
+    analysis_trends = compare_trends()
+    prev_trades = trades.get_trade(messages[0]["content"])
+    if "strongest upward trend" in trend_analysis and "strongest downward trend" in trend_analysis:
+        upward_coin = trend_analysis.split("strongest upward trend")[1].split("and")[0].strip()
+        downward_coin = trend_analysis.split("strongest downward trend")[1].strip()
+        if prev_trades:
+            advice = f"Based on historical trends, {upward_coin} shows a strong upward trend, while {downward_coin} is on a downward trajectory. "
+            advice += "Since you've previously traded these, it might be wise to consider holding or selling {downward_coin}, and buying {upward_coin} if you haven't already done so."
+        else:
+            advice = f"Based on historical trends, {upward_coin} shows a strong upward trend, while {downward_coin} is on a downward trajectory. "
+            advice += "Consider buying {upward_coin} to capitalize on the trend."
+    else:
+        advice = "Insufficient data to provide an analysis of trends or previous trades."
+    return advice
 
 
 # Process each tool call and append a corresponding tool message.
@@ -259,14 +283,16 @@ for tool_call in tool_calls:
         result = compare_trends()
     elif tool_call.function.name == "get_summary":
         result = get_summary()
-    elif tool_call.function.name == "make_trade":
-        result = make_trade()
+    elif tool_call.function.name == "get_advice":
+        result = get_advice()
     else:
         args = json.loads(tool_call.function.arguments)
         if tool_call.function.name == "get_price":
             result = get_price(args["coin"])
         elif tool_call.function.name == "get_trend":
             result = get_trend(args["coin"])
+        elif tool_call.function.name == "make_trade":
+            result = make_trade(args["coin"])
         else:
             result = "No matching function found."
     
@@ -280,7 +306,8 @@ for tool_call in tool_calls:
 messages.append({
     "role": "user",
     # "content": "Based on the provided data and analysis, please summarize the overall trends among the coins."
-    "content" : "make a trade for bitcoin."
+    # "content" : "make a trade."
+    "content" : "Give me advice depending on what's happened so far in the markets."
 })
 
 # Final API call with the updated conversation.
@@ -289,5 +316,8 @@ completion_2 = client.chat.completions.create(
     messages=messages,
     tools=tools,
 )
+# coin_name_for_trade = "bitcoin"
+# trade_result = make_trade(coin_name_for_trade)
+# print(trade_result)
 
 print(completion_2.choices[0].message.content)
