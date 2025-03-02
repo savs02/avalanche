@@ -274,6 +274,13 @@ def give_advice():
         advice = "Insufficient data to provide an analysis of trends or previous trades."
     return advice
 
+def get_crypto_news():
+    news, output_string_arr = crypto_news.get_crypto()
+    return "\n".join(output_string_arr)
+
+def finish():
+    return "Thank you for using the crypto trading assistant. Have a nice day!"
+
 
 # Process each tool call and append a corresponding tool message.
 for tool_call in tool_calls:
