@@ -1,34 +1,38 @@
 import os
 import requests
 from dotenv import load_dotenv
-load_dotenv()
 
-API_KEY = os.getenv("CRYPTO_NEWS_API_KEY")
-url = "https://cryptonews-api.com/api/v1"
+class Article:
+    def __init__(self, title, date, url, text, image):
+        self.title = title
+        self.date = date
+        self.url = url
+        self.text = text
+        self.image = image
 
-params = {
-    "tickers": "BTC,ETH,XRP",  # Bitcoin, Ethereum, and Ripple tickers
-    "items": 3,              
-    "page" : 1, # Number of news items you want to retrieve
-    "token": API_KEY,
-}
 
-try:
-    response = requests.get(url, params=params)
-    response.raise_for_status()  # Raise an error for bad responses
-    news_data = response.json()
+class CryptoNews:
+    def __init__(self):
+        load_dotenv()
+        self.API_KEY = os.getenv("CRYPTO_NEWS_API_KEY")
+        self.url = "https://cryptonews-api.com/api/v1"
+        self.params = {
+                "tickers": "BTC,ETH,XRP", 
+                "items": 3,              
+                "page" : 1, 
+                "token": self.API_KEY,
+            }
+        
+    def get_crypto(self):
+        response = requests.get(self.url, params=self.params)
+        response.raise_for_status()  
+        news_data = response.json()
+        result = []
 
-    # Check if the API returned news articles under the 'data' key.
-    articles = news_data.get("data", [])
-    if not articles:
-        print("No news articles found.")
-    else:
-        for article in articles:
-            # Each article is a dictionary with keys like 'title', 'publishedAt', 'source', and 'url'.
-            print(f"Title: {article.get('title')}")
-            print(f"Published At: {article.get('date')}")
-            print(f"URL: {article.get('news_url')}")
-            print(article.get('text'))
-            print("-" * 50)
-except requests.RequestException as e:
-    print("Error fetching news:", e)
+        articles = news_data.get("data", [])
+        if not articles:
+            print("No news articles found.")
+        else:
+            for article in articles:
+                result.append(Article(article.get('title'), article.get('date'), article.get('news_url'), article.get('text'), article.get('image_url')))
+        return result
