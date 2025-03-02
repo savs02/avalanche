@@ -261,9 +261,9 @@ def make_trade(coin: str):
 def give_advice():
     analysis_trends = compare_trends()
     prev_trades = trades.get_trade(messages[0]["content"])
-    if "strongest upward trend" in trend_analysis and "strongest downward trend" in trend_analysis:
-        upward_coin = trend_analysis.split("strongest upward trend")[1].split("and")[0].strip()
-        downward_coin = trend_analysis.split("strongest downward trend")[1].strip()
+    if "strongest upward trend" in analysis_trends and "strongest downward trend" in analysis_trends:
+        upward_coin = analysis_trends.split("strongest upward trend")[1].split("and")[0].strip()
+        downward_coin = analysis_trends.split("strongest downward trend")[1].strip()
         if prev_trades:
             advice = f"Based on historical trends, {upward_coin} shows a strong upward trend, while {downward_coin} is on a downward trajectory. "
             advice += "Since you've previously traded these, it might be wise to consider holding or selling {downward_coin}, and buying {upward_coin} if you haven't already done so."
