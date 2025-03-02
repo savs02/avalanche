@@ -18,5 +18,12 @@ def get_market_data():
     market_data = coin_data.get_data()
     return jsonify(market_data)
 
+# @app.get("/trades/")
+# async def get_trades(text: str):
+#     trade = trades_db.get_trade(text)
+#     if trade:
+#         return {"coin": trade.coin, "price": trade.price, "time": trade.time}
+#     raise HTTPException(status_code=404, detail="Trade not found")
+
 if __name__ == "__main__":
     app.run(debug=True)
