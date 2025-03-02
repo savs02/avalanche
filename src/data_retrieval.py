@@ -5,42 +5,41 @@ import requests
 from dotenv import load_dotenv
 
 
-def get_data():
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    }
+class CoinData:
+    def __init__(self):
+        load_dotenv()
+        self.COINGECKO_URL = os.getenv("COINGECKO_URL")
+        self.API_KEY = os.getenv("COINGECKO_API_KEY")
+        self.HISTORY_PERIOD = 2 # in days
+        self.result = None
 
-    result = {}
+    def get_data(self):
+        headers = {
+            "Authorization": f"Bearer {self.API_KEY}",
+            "Content-Type": "application/json"
+        }
 
-    market_data_endpoint = f"{COINGECKO_URL}/coins/markets"
-    params = {"vs_currency": "usd", "per_page": 4}
-    market_data = requests.get(market_data_endpoint, headers=headers, params=params).json()
-    coins_ids_list = [coin['id'] for coin in market_data]
+        result = {}
 
-    for coin in market_data:
-        result[coin['id']] = {"market data":{k: v for k, v in coin.items() if k != 'id'}}
+        market_data_endpoint = f"{self.COINGECKO_URL}/coins/markets"
+        params = {"vs_currency": "usd", "per_page": 4}
+        market_data = requests.get(market_data_endpoint, headers=headers, params=params).json()
+        coins_ids_list = [coin['id'] for coin in market_data]
 
-    for coin_id in coins_ids_list:
-        historical_market_chart_by_id_endpoint = f"{COINGECKO_URL}/coins/{coin_id}/market_chart"
-        params = {"vs_currency": "usd",
-                "days": HISTORY_PERIOD,
-                "interval": "daily"}
-        history = requests.get(historical_market_chart_by_id_endpoint, headers=headers, params=params).json()
-        result[coin_id]["historical data"] = history
+        for coin in market_data:
+            result[coin['id']] = {"market data":{k: v for k, v in coin.items() if k != 'id'}}
 
-    json_result = json.dumps(result)
-    return json_result
+        for coin_id in coins_ids_list:
+            historical_market_chart_by_id_endpoint = f"{self.COINGECKO_URL}/coins/{coin_id}/market_chart"
+            params = {"vs_currency": "usd",
+                    "days": self.HISTORY_PERIOD,
+                    "interval": "daily"}
+            history = requests.get(historical_market_chart_by_id_endpoint, headers=headers, params=params).json()
+            result[coin_id]["historical data"] = history
 
-if __name__ == "__main__":
-    load_dotenv()
-
-    COINGECKO_URL = os.getenv("COINGECKO_URL")
-    API_KEY = os.getenv("COINGECKO_API_KEY")
-    HISTORY_PERIOD = 2 # in days
-
-    if not API_KEY:
-        raise ValueError("API key not found. Please check your .env file.")
+        json_result = json.dumps(result)
+        self.result = json_result
+        return json_result
     
-    json_result = get_data()
-    print(json_result)
+    def get_result(self):
+        return self.result
