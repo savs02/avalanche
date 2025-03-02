@@ -71,27 +71,53 @@ export const fetchTopCoins = async (): Promise<Coin[]> => {
 
 export const fetchGlobalData = async (): Promise<MarketData> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/global`);
+    const response = await fetch(`http://127.0.0.1:5000/market-data`);
     
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
     
     const data = await response.json();
-    // Extract only the needed data and flatten the structure
+
+    // Aggregate market data across all coins
+    let total_market_cap = 0;
+    let total_volume = 0;
+    let market_cap_percentage: { [key: string]: number } = {};
+    
+    for (const coin in data) {
+      if (data[coin]["market data"]) {
+        total_market_cap += data[coin]["market data"].market_cap || 0;
+        total_volume += data[coin]["market data"].total_volume || 0;
+      }
+    }
+
+    // Compute market cap percentage per coin
+    for (const coin in data) {
+      if (data[coin]["market data"] && total_market_cap > 0) {
+        market_cap_percentage[coin] = 
+          (data[coin]["market data"].market_cap / total_market_cap) * 100;
+      }
+    }
+
+    // Extract market cap change percentage from Bitcoin (as a representative metric)
+    const btcMarketData = data["bitcoin"]?.["market data"];
+    const market_cap_change_percentage_24h_usd = btcMarketData
+      ? btcMarketData.market_cap_change_percentage_24h
+      : 0;
+
     return {
-      total_market_cap: data.data.total_market_cap.usd,
-      total_volume: data.data.total_volume.usd,
-      market_cap_percentage: data.data.market_cap_percentage,
-      market_cap_change_percentage_24h_usd: data.data.market_cap_change_percentage_24h_usd
+      total_market_cap,
+      total_volume,
+      market_cap_percentage,
+      market_cap_change_percentage_24h_usd,
     };
   } catch (error) {
-    console.error('Error fetching global data:', error);
+    console.error('Error fetching market data:', error);
     return {
       total_market_cap: 0,
       total_volume: 0,
       market_cap_percentage: {},
-      market_cap_change_percentage_24h_usd: 0
+      market_cap_change_percentage_24h_usd: 0,
     };
   }
 };
