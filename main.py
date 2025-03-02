@@ -170,33 +170,50 @@ async def handle_media_stream(websocket: WebSocket):
                             if SHOW_TIMING_MATH:
                                 print(f"Setting start timestamp for new response: {response_start_timestamp_twilio}ms")
 
-                        # Update last_assistant_item safely
-                        if response.get('item_id'):
-                            last_assistant_item = response['item_id']
+                    # Update last_assistant_item safely
+                    if response.get('item_id'):
+                        last_assistant_item = response['item_id']
+                        
 
-                        if response.get('tools'):
-                            for tool_call in response['tools']:
-                                # Example: you can process the tool call and return the result to Twilio
-                                if tool_call['name'] == 'get_weather':
-                                    location = tool_call['parameters']['properties']['location']
-                                    print("NIKITA", location)
-                                    # You would implement the actual logic for the tool here
-                                    weather_info = get_weather(location)
-                                    print("NIKITA", weather_info)
+                    if response.get('type') == 'response.done':
+                        print("RESPONSE TYPE IS DONE")
+                        
+                        items = response["response"]["output"]
 
-                                    # Send the result back to the user through Twilio
-                                    # await send_weather_info_to_twilio(weather_info)
-                                    weather_audio = base64.b64encode(weather_info.encode('utf-8')).decode('utf-8')
-                                    audio_response = {
-                                        "event": "media",
-                                        "streamSid": stream_sid,
-                                        "media": {
-                                            "payload": weather_audio
+                        print("ITEMS: ", items)
+
+                        for item in items:
+                            if item.get("type") == "function_call":
+                                print("FOUND FUNCTION CALL")
+                                function_name = item.get("name")
+                                function_args = json.loads(item.get("arguments"))
+
+                                # function_to_call = tools[function_name]
+                                try:
+                                    # function_response = function_to_call(**function_args)
+                                    function_response = get_weather(**function_args)
+                                    print("FUNCTION CALL RESPONSE: ", function_response)
+                                except Exception as e:
+                                    print(f"Error calling function {item['name']}: {e}")
+
+                                # Send function output to OpenAI WebSocket
+                                try:
+                                    await openai_ws.send(json.dumps({
+                                        "type": "conversation.item.create",
+                                        "item": {
+                                            "type": "function_call_output",
+                                            "call_id": item.get("call_id"),
+                                            "output": function_response
                                         }
-                                    }
-                                    await websocket.send_json(audio_response)
+                                    }))
+                                except Exception as e:
+                                    print(f"Error sending function output to OpenAI: {e}")
 
-                        await send_mark(websocket, stream_sid)
+                            # Define a valid response trigger
+                            response_create = {
+                                "type": "response.create"
+                            }
+                            await openai_ws.send(json.dumps(response_create))
 
                     # Trigger an interruption. Your use case might work better using `input_audio_buffer.speech_stopped`, or combining the two.
                     if response.get('type') == 'input_audio_buffer.speech_started':
