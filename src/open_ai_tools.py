@@ -112,6 +112,13 @@ tools = [
             "name": "get_crypto_news",
             "description": "Retrieve the latest cryptocurrency news articles from sources."
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "finish",
+            "description": "End the chat."
+        }
     }
 ]
 
@@ -123,7 +130,8 @@ messages = [
     {"role": "user", "content": "Based on historical data, what trend do you see for all the coins?"},
     {"role": "user", "content": f"What's the current price for {coin_name}?"},
     {"role": "user", "content": f"What trend do you see for {coin_name}?"},
-    {"role": "user", "content": "Show me the latest crypto news context."}  # Triggers the get_context tool.
+    {"role": "user", "content": "Show me the latest crypto news context."},  # Triggers the get_context tool.
+    {"role": "user", "content": f"Bye. End the chat."},
 ]
 
 # Call the model with the user messages and the defined tools.
@@ -291,8 +299,8 @@ for tool_call in tool_calls:
         result = compare_trends()
     elif tool_call.function.name == "get_summary":
         result = get_summary()
-    # elif tool_call.function.name == "get_crypto_news":
-    #     result = get_crypto_news()
+    elif tool_call.function.name == "get_crypto_news":
+        result = get_crypto_news()
     else:
         args = json.loads(tool_call.function.arguments)
         if tool_call.function.name == "get_price":
@@ -313,10 +321,7 @@ for tool_call in tool_calls:
 # Add an extra instruction for the model.
 messages.append({
     "role": "user",
-    # "content": "Based on the provided data and analysis, please summarize the overall trends among the coins."
-    "content" : "make a trade."
-    # "content" : "Give me advice depending on what's happened so far in the markets."
-    # "content" : "Show me the latest crypto news context."
+    "content": "Based on the provided data and analysis, please summarize the overall trends among the coins."
 })
 
 # Final API call with the updated conversation.
