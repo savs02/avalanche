@@ -3,7 +3,7 @@ import requests
 from dotenv import load_dotenv
 load_dotenv()
 
-API_KEY = os.getenv("CRYOTO_NEWS_API_KEY")
+API_KEY = os.getenv("CRYPTO_NEWS_API_KEY")
 url = "https://cryptonews-api.com/api/v1"
 
 params = {
@@ -28,6 +28,7 @@ try:
             print(f"Title: {article.get('title')}")
             print(f"Published At: {article.get('date')}")
             print(f"URL: {article.get('news_url')}")
+            print(article.get('text'))
             print("-" * 50)
 except requests.RequestException as e:
     print("Error fetching news:", e)
