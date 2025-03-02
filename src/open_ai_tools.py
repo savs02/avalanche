@@ -1,12 +1,16 @@
 from data_retrieval import CoinData
+from previous_trades import PreviousTrades
 from openai import OpenAI
+import datetime
 import json
 import os
 from dotenv import load_dotenv
 load_dotenv()
 
+API_KEY = os.getenv("OPENAI_API_KEY")
 data = CoinData().get_data()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=API_KEY)
+trades = PreviousTrades(openai_api_key=API_KEY)
 
 # Get coin name dynamically from the user
 coin_name = input("Enter the coin name (e.g., 'ethereum'): ")
@@ -67,12 +71,21 @@ tools = [
         "type": "function",
         "function": {
             "name": "get_summary",
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "make_trade",
             "description": (
-                "Give a quick three liner summary that could serve as a morning digest based on all the data given for all the coins."
+                "Make a trade for the given coin."
             ),
             "parameters": {
                 "type": "object",
-                "properties": {},
+                "properties": {
+                    "coin": {"type": "string"}
+                },
+                "required": ["coin"],
                 "additionalProperties": False
             },
             "strict": True
@@ -82,6 +95,7 @@ tools = [
 
 # Build the user messages.
 messages = [
+    {"role": "user", "content": f"Make a trade for {coin_name}?"},
     {"role": "user", "content": "Give me the latest summary of what's happened so far in the markets."},
     {"role": "user", "content": "Based on historical data, what trend do you see for all the coins?"},
     {"role": "user", "content": f"What's the current price for {coin_name}?"},
@@ -226,12 +240,27 @@ def get_summary():
     
     return "\n".join(summary_lines)
 
+def make_trade(coin: str):
+    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    data_dict = json.loads(data)
+    if coin in data_dict:
+        coin_data = data_dict[coin]
+        price = coin_data.get("market data", {}).get("current_price", "Price not available")
+        trades.add_trade(messages[0]["content"], coin, price, current_time)
+        return f"Trade for {coin} at {price} has been successfully made at {current_time}."
+    return f"{coin} not found."
+
+# def give_advice():
+
+
 # Process each tool call and append a corresponding tool message.
 for tool_call in tool_calls:
     if tool_call.function.name == "compare_trends":
         result = compare_trends()
     elif tool_call.function.name == "get_summary":
         result = get_summary()
+    elif tool_call.function.name == "make_trade":
+        result = make_trade()
     else:
         args = json.loads(tool_call.function.arguments)
         if tool_call.function.name == "get_price":
@@ -250,7 +279,8 @@ for tool_call in tool_calls:
 # Add an extra instruction for the model.
 messages.append({
     "role": "user",
-    "content": "Based on the provided data and analysis, please summarize the overall trends among the coins."
+    # "content": "Based on the provided data and analysis, please summarize the overall trends among the coins."
+    "content" : "make a trade for bitcoin."
 })
 
 # Final API call with the updated conversation.
