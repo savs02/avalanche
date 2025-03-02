@@ -2,15 +2,6 @@ import os
 import requests
 from dotenv import load_dotenv
 
-class Article:
-    def __init__(self, title, date, url, text, image):
-        self.title = title
-        self.date = date
-        self.url = url
-        self.text = text
-        self.image = image
-
-
 class CryptoNews:
     def __init__(self):
         load_dotenv()
@@ -28,11 +19,24 @@ class CryptoNews:
         response.raise_for_status()  
         news_data = response.json()
         result = []
+        output_string_arr = []
 
         articles = news_data.get("data", [])
         if not articles:
             print("No news articles found.")
         else:
             for article in articles:
-                result.append(Article(article.get('title'), article.get('date'), article.get('news_url'), article.get('text'), article.get('image_url')))
-        return result
+                result.append({'title': article.get('title'), 
+                               'date': article.get('date'), 
+                               'news_url': article.get('news_url'), 
+                               'text': article.get('text'), 
+                               'image_url': article.get('image_url')
+                               })
+                output_string_arr.append(
+                                f"Title: {article.get('title')}\n"
+                                f"Date: {article.get('date')}\n"
+                                f"URL: {article.get('news_url')}\n"
+                                f"Text: {article.get('text')}\n"
+                                + "-" * 30
+                            )
+        return result, output_string_arr
