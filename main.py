@@ -38,12 +38,14 @@ tools = [{
                 "location"
             ],
             "additionalProperties": False
-        },
-        # "strict": True
+        }
     }
 ]
 
-tools_string = json.dumps(tools, indent=4)
+
+available_functions = {
+    "get_weather": get_weather
+}
 
 
 SYSTEM_MESSAGE = (
@@ -188,10 +190,10 @@ async def handle_media_stream(websocket: WebSocket):
                                 function_name = item.get("name")
                                 function_args = json.loads(item.get("arguments"))
 
-                                # function_to_call = tools[function_name]
+                                function_to_call = available_functions[function_name]
                                 try:
-                                    # function_response = function_to_call(**function_args)
-                                    function_response = get_weather(**function_args)
+                                    function_response = function_to_call(**function_args)
+                                    # function_response = get_weather(**function_args)
                                     print("FUNCTION CALL RESPONSE: ", function_response)
                                 except Exception as e:
                                     print(f"Error calling function {item['name']}: {e}")
