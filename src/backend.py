@@ -7,6 +7,8 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
+import datetime
+
 app = Flask(__name__)
 CORS(app)
 
@@ -25,8 +27,9 @@ def get_market_data():
 @app.get("/trades")
 def get_trades():
     prev_trades = PreviousTrades(openai_api_key=os.getenv("OPENAI_API_KEY"))
-    trades = prev_trades.get_prev_trades()
-    trades.append({"coin":"bitcoin", "price":"87000", "time":"3.10:2:00"})
+    trades = prev_trades.get_prev_trades() 
+    trades.append({"coin":"bitcoin", "price":87000, "time":datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+    trades.append({"coin":"ethereum", "price":5002, "time":"2025-02-15T09:45:00Z"})
     if trades:
         return jsonify(trades), 200
         # return {"coin": trade.coin, "price": trade.price, "time": trade.time}
