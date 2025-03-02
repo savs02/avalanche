@@ -9,22 +9,19 @@ class Trade:
         self.time = time
 
 class PreviousTrades:
-    def __init__(self, openai_api_key, model="gpt-4"):
+    def __init__(self, openai_api_key, model="gpt-4o-mini"):
         self.trades = {}
+        self.prev_trades = []
         self.model = model 
         openai.api_key = openai_api_key
-    
-    def _add_trade(self, text, coin, price, time):
-        text = text.join('\n')
-        key_words = self.get_keys(text)
-        key = '@'.join(key_words)
-        self.trades[key] = Trade(coin, price, time)
 
-    def _add_trade(self, text, coin, price, time):
-        text = text.join('\n')
+    def add_trade(self, text, coin, price, time):
+        if len(self.prev_trades == 5):
+            self.prev_trades.pop(0)
         key_words = self.get_keys(text)
         key = '@'.join(key_words)
         self.trades[key] = Trade(coin, price, time)
+        self.prev_trades.append([coin, price, time])
 
     def get_keys(self, text):
         prompt = (
@@ -57,6 +54,9 @@ class PreviousTrades:
             if len(key_words) > 0 and (freq / len(key_words)) >= 0.5:
                 return trade
         return None
+    
+    def get_prev_trades(self):
+        pass
 
 
 if __name__ == "__main__":
