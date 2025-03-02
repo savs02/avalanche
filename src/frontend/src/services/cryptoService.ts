@@ -145,45 +145,67 @@ export const fetchCoinChartData = async (coinId: string, days: number = 7): Prom
 
 // Mock trades data (in a real app, this would come from a backend)
 export const fetchUserTrades = async (): Promise<Trade[]> => {
-  // Simulating an API call
-  return [
-    {
-      id: '1',
-      coinId: 'bitcoin',
-      type: 'buy',
-      amount: 0.05,
-      price: 87500,
-      date: '2025-02-25T10:30:00Z',
-      profit: 0
-    },
-    {
-      id: '2',
-      coinId: 'ethereum',
-      type: 'buy',
-      amount: 1.2,
-      price: 2400,
-      date: '2025-02-20T14:15:00Z',
-      profit: -212.4
-    },
-    {
-      id: '3',
-      coinId: 'bitcoin',
-      type: 'sell',
-      amount: 0.02,
-      price: 92000,
-      date: '2025-02-15T09:45:00Z',
-      profit: 850
-    },
-    {
-      id: '4',
-      coinId: 'ripple',
-      type: 'buy',
-      amount: 1000,
-      price: 2.15,
-      date: '2025-02-10T16:20:00Z',
-      profit: 50
+  try {
+    const response = await fetch(`http://127.0.0.1:5000/trades`);
+    
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
     }
-  ];
+  
+    const trades = await response.json();
+    // return [];
+    return trades.map((trade: any, index: number) => ({
+      id: index.toString(),
+      coinId: trade.coin,
+      type: "unknown", 
+      amount: "unknown", 
+      price: trade.price,
+      date: trade.time, 
+      profit: 0
+    }));
+  } catch (error) {
+    console.error("Error fetching trades:", error);
+    return [];
+  }
+  // // Simulating an API call
+  // return [
+  //   {
+  //     id: '1',
+  //     coinId: 'bitcoin',
+  //     type: 'buy',
+  //     amount: 0.05,
+  //     price: 87500,
+  //     date: '2025-02-25T10:30:00Z',
+  //     profit: 0
+  //   },
+  //   {
+  //     id: '2',
+  //     coinId: 'ethereum',
+  //     type: 'buy',
+  //     amount: 1.2,
+  //     price: 2400,
+  //     date: '2025-02-20T14:15:00Z',
+  //     profit: -212.4
+  //   },
+  //   {
+  //     id: '3',
+  //     coinId: 'bitcoin',
+  //     type: 'sell',
+  //     amount: 0.02,
+  //     price: 92000,
+  //     date: '2025-02-15T09:45:00Z',
+  //     profit: 850
+  //   },
+  //   {
+  //     id: '4',
+  //     coinId: 'ripple',
+  //     type: 'buy',
+  //     amount: 1000,
+  //     price: 2.15,
+  //     date: '2025-02-10T16:20:00Z',
+  //     profit: 50
+  //   }
+  // ];
 };
 
 export const fetchCryptoNews = async (): Promise<NewsItem[]> => {

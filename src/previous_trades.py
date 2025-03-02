@@ -21,7 +21,7 @@ class PreviousTrades:
         key_words = self.get_keys(text)
         key = '@'.join(key_words)
         self.trades[key] = Trade(coin, price, time)
-        self.prev_trades.append([coin, price, time])
+        self.prev_trades.append({"coin": coin, "price": price, "time": time})
 
     def get_keys(self, text):
         prompt = (
@@ -56,7 +56,7 @@ class PreviousTrades:
         return None
     
     def get_prev_trades(self):
-        pass
+        return self.prev_trades
 
 
 if __name__ == "__main__":
