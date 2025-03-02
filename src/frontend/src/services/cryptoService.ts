@@ -160,37 +160,11 @@ export const fetchUserTrades = async (): Promise<Trade[]> => {
   ];
 };
 
-// Mock news data (since CoinGecko doesn't provide news)
 export const fetchCryptoNews = async (): Promise<NewsItem[]> => {
-  // In a real app, we would fetch from a news API
-  return [
-    {
-      title: "Bitcoin Surges to New Highs as Institutional Interest Grows",
-      url: "#",
-      source: "CryptoNews",
-      publishedAt: new Date().toISOString(),
-      urlToImage: "https://images.unsplash.com/photo-1518546305927-5a555bb7020d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1400&q=80"
-    },
-    {
-      title: "Ethereum 2.0 Upgrade: What You Need to Know",
-      url: "#",
-      source: "BlockchainInsider",
-      publishedAt: new Date().toISOString(),
-      urlToImage: "https://images.unsplash.com/photo-1622630998477-20aa696ecb05?ixlib=rb-1.2.1&auto=format&fit=crop&w=1400&q=80"
-    },
-    {
-      title: "Regulators Set New Framework for Cryptocurrency Exchanges",
-      url: "#",
-      source: "CryptoDaily",
-      publishedAt: new Date().toISOString(),
-      urlToImage: "https://images.unsplash.com/photo-1621761331887-35f4c9619667?ixlib=rb-1.2.1&auto=format&fit=crop&w=1400&q=80"
-    },
-    {
-      title: "NFT Market Continues to Expand Despite Price Fluctuations",
-      url: "#",
-      source: "DigitalAssetNews",
-      publishedAt: new Date().toISOString(),
-      urlToImage: "https://images.unsplash.com/photo-1658237759206-3efe941e4ddc?ixlib=rb-1.2.1&auto=format&fit=crop&w=1400&q=80"
-    }
-  ];
+  const response = await fetch("http://127.0.0.1:5000/crypto-news");
+  if (!response.ok) {
+    throw new Error("Failed to fetch news");
+  }
+  const data = await response.json();
+  return data;
 };
