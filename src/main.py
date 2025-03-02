@@ -57,52 +57,60 @@ PORT = int(os.getenv('PORT', 5050))
 
 
 tools = [
-    # {
-    #     "type": "function",
-    #     "name": "get_price",
-    #     "description": "Get the current price for the given coin. Accepts a coin id (e.g., 'bitcoin') as a string.",
-    #     "parameters": {
-    #         "type": "object",
-    #         "properties": {
-    #             "coin": {"type": "string"}
-    #         },
-    #         "required": ["coin"],
-    #         "additionalProperties": False
-    #     }
-    # },
-    # {
-    #     "type": "function",
-    #     "name": "get_trend",
-    #     "description": (
-    #         "Retrieve the historical data for the given coin so that the model can analyze "
-    #         "and determine the trend based on its reasoning."
-    #     ),
-    #     "parameters": {
-    #         "type": "object",
-    #         "properties": {
-    #             "coin": {"type": "string"}
-    #         },
-    #         "required": ["coin"],
-    #         "additionalProperties": False
-    #     }
-    # },
-    # {
-    #     "type": "function",
-    #     "name": "compare_trends",
-    #     "description": (
-    #         "Compare the historical data for all the coins and provide an analysis of their trends."
-    #     ),
-    #     "parameters": {
-    #         "type": "object",
-    #         "properties": {},
-    #         "additionalProperties": False
-    #     }
-    # },
+    {
+        "type": "function",
+        "name": "get_price",
+        "description": "Get the current price for the given coin. Accepts a coin id (e.g., 'bitcoin') as a string. Options coins are: bitcoin, ethereum, ripple. If another coin is mentioned, say that this is not currently supported.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "coin": {"type": "string"}
+            },
+            "required": ["coin"],
+            "additionalProperties": False
+        }
+    },
+    {
+        "type": "function",
+        "name": "get_trend",
+        "description": (
+            "Retrieve the historical data for the given coin so that the model can analyze "
+            "and determine the trend based on its reasoning. Mention that the historical data is over the last 3 days. "
+            "Explain any fluctuations and changes as well as the overall general trend, referencing specific values. Be detailed in your response and mention specific value.  Make sure to ennunciate positive and negative trend indexes e.g., '-0.18' as 'negative 0.18'."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "coin": {"type": "string"}
+            },
+            "required": ["coin"],
+            "additionalProperties": False
+        }
+    },
+    {
+        "type": "function",
+        "name": "compare_trends",
+        "description": (
+            "Compare the historical data for all the coins and provide an analysis of their trends. Be detailed in your response. "
+            "Mention that the historical data is over the last 3 days. Consider all pairings of the coins and comparisons. Conclude with a 1-line summary of the findings. "
+            "Mention specfific values to back up your assessments and be detailed. Make sure to ennunciate positive and negative trend indexes e.g., '-0.18' as 'negative 0.18'."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": False
+        }
+    },
     {
         "type": "function",
         "name": "get_summary",
-        "description": "Provide a brief summary of the market conditions based on available data."
-    } #,
+        "description": "Provide a brief summary of the market conditions based on available data.  Make sure to ennunciate positive and negative trend indexes e.g., '-0.18' as 'negative 0.18'.",
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": False
+        }
+    },
     # {
     #     "type": "function",
     #     "name": "make_trade",
@@ -125,20 +133,31 @@ tools = [
     #         "Advice the user on making a trade based on previous trades and comparison with their trends so far."
     #     )
     # },
-    # {
-    #     "type": "function",
-    #     "name": "get_crypto_news",
-    #     "description": "Retrieve the latest cryptocurrency news articles from sources."
-    # },
-    # {
-    #     "type": "function",
-    #     "name": "finish",
-    #     "description": "End the chat."
-    # }
+    {
+        "type": "function",
+        "name": "get_crypto_news",
+        "description": "Retrieve the latest cryptocurrency news articles from sources. Be detailed in your response, mentioning the titles of the news articles and then explaining the findings. Add specfific coin values.  Make sure to ennunciate positive and negative trend indexes e.g., '-0.18' as 'negative 0.18'.",
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": False
+        }
+    },
+    {
+        "type": "function",
+        "name": "finish",
+        "description": "End the chat.",
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": False
+        }
+    }
 ]
 
 
 data = CoinData().get_data()
+data_dict = json.loads(data)
 trades = PreviousTrades(openai_api_key=OPENAI_API_KEY)
 crypto_news = CryptoNews()
 
@@ -153,7 +172,6 @@ crypto_news = CryptoNews()
 # ]
 
 def get_price(coin: str):
-    data_dict = json.loads(data)
     if coin in data_dict:
         coin_data = data_dict[coin]
         price = coin_data.get("market data", {}).get("current_price", "Price not available")
@@ -162,7 +180,6 @@ def get_price(coin: str):
         return f"Data for {coin} not found."
 
 def get_trend(coin: str):
-    data_dict = json.loads(data)
     if coin in data_dict:
         coin_data = data_dict[coin]
         historical_data = coin_data.get("historical data")
@@ -187,7 +204,6 @@ def get_trend(coin: str):
         return f"Data for {coin} not found."
 
 def compare_trends():
-    data_dict = json.loads(data)
     analysis = []
     for coin, coin_data in data_dict.items():
         historical_data = coin_data.get("historical data")
@@ -220,7 +236,6 @@ def get_summary():
         2. Notable trend analysis from all coins.
         3. A concluding digest line.
     """
-    data_dict = json.loads(data)
     coin_prices = []
     trend_results = []
     
@@ -266,16 +281,16 @@ def get_summary():
     
     return "\n".join(summary_lines)
 
-# def make_trade(coin: str):
-#     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-#     data_dict = json.loads(data)
-#     if coin in data_dict:
-#         coin_data = data_dict[coin]
-#         price = coin_data.get("market data", {}).get("current_price", "Price not available")
-#         # trades.add_trade(messages[1]["content"], coin, price, current_time)
-#         trades.add_trade(messages[1]["content"], coin, price, current_time)
-#         return f"Trade for {coin} at {price} has been successfully made at {current_time}."
-#     return f"{coin} not found."
+def make_trade(coin: str):
+    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    data_dict = json.loads(data)
+    if coin in data_dict:
+        coin_data = data_dict[coin]
+        price = coin_data.get("market data", {}).get("current_price", "Price not available")
+        # trades.add_trade(messages[1]["content"], coin, price, current_time)
+        trades.add_trade(messages[1]["content"], coin, price, current_time)
+        return f"Trade for {coin} at {price} has been successfully made at {current_time}."
+    return f"{coin} not found."
 
 # def give_advice():
 #     analysis_trends = compare_trends()
@@ -304,13 +319,13 @@ def finish():
 
 available_functions = {
     # "give_advice": give_advice,
-    # "compare_trends": compare_trends,
-    "get_summary": get_summary #,
-    # "get_crypto_news": get_crypto_news,
-    # "get_price": get_price,
-    # "get_trend": get_trend,
+    "compare_trends": compare_trends,
+    "get_summary": get_summary,
+    "get_crypto_news": get_crypto_news,
+    "get_price": get_price,
+    "get_trend": get_trend,
     # "make_trade": make_trade #,
-    # "finish": finish
+    "finish": finish
 }
 
 
@@ -318,7 +333,8 @@ available_functions = {
 ########## Start Twilio and OpenAI integration
 
 SYSTEM_MESSAGE = (
-    "You are a concise and knowledgeable crypto trading assistant. Keep responses under 50 words while delivering precise market insights. Stay professional but approachable, offering facts, trends, and news. Keep jokes minimal, but if appropriate, a subtle reference to market volatility or a light trading pun is welcome."
+    # "You are a concise and knowledgeable crypto trading assistant. Keep responses under 100 words while delivering precise market insights. Stay professional but approachable, offering facts, trends, and news. Keep jokes minimal, but if appropriate, a subtle reference to market volatility or a light trading pun is welcome."
+    "You are a concise and knowledgeable crypto trading assistant. Deliver precise market insights. Stay professional but approachable, offering facts, trends, and news. Keep jokes minimal, but if appropriate, a subtle reference to market volatility or a light trading pun is welcome."
 )
 VOICE = 'alloy'
 LOG_EVENT_TYPES = [
@@ -477,11 +493,11 @@ async def handle_media_stream(websocket: WebSocket):
                                 except Exception as e:
                                     print(f"Error sending function output to OpenAI: {e}")
 
-                            # Define a valid response trigger
-                            response_create = {
-                                "type": "response.create"
-                            }
-                            await openai_ws.send(json.dumps(response_create))
+                                # Define a valid response trigger
+                                response_create = {
+                                    "type": "response.create"
+                                }
+                                await openai_ws.send(json.dumps(response_create))
 
                     # Trigger an interruption. Your use case might work better using `input_audio_buffer.speech_stopped`, or combining the two.
                     if response.get('type') == 'input_audio_buffer.speech_started':
